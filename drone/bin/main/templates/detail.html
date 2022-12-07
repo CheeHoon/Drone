@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IoT 관제 시스템</title>
+    <!-- 파비콘 -->
+    <link rel="shortcut icon" href="images/favicon.ico" />
+    <!-- 구글 무료 폰트 -->
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&display=swap" rel="stylesheet" />
+    <!-- 아이콘 -->
+    <link
+      rel="stylesheet"
+      href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+      integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="/css/index.css" />
+    <link rel="stylesheet" href="/css/detail.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="nav">
+        <!-- 드론 운행정보 -->
+        <div class="driving-info">
+          <!-- 드론 상세정보 -->
+          <div class="drone-info">
+          	<input id="droneUUID" type="hidden" th:value="${droneUUID}"/>
+            <h4 id="droneName"> <i class="fas fa-drone-alt"></i></h4>
+            <p>배터리 잔량 <i class="fas fa-battery-bolt"></i> : <span id="battery"></span></p>
+            <p>
+              신호센서 작동 여부 <i class="fas fa-satellite-dish"></i>:
+              <span id="msg"></span>
+            </p>
+            <p>
+              현재 위치 <i class="fas fa-map-marker-alt"></i>:
+              <span id="loc"></span>
+            </p>
+            <p>
+              드론 등록날짜 <i class="fa fa-calendar"></i> :
+              <span id="createAt"></span>
+            </p>
+          </div>
+          <!-- 드론 날짜별 운행정보 -->
+          <div class="driving-logs">
+            <h3>최근 운행기록</h3>
+            <ul class="logs-container">
+              <!-- <li class="logs-item" onclick="getDrivingHistory()">
+                <p>출발 시간 : 2022-10-28 14:44:33</p>
+                <p>도착 시간 : 2022-10-28 16:03:43</p>
+              </li> -->
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div id="kakao-map" class="map"></div>
+    </div>
+  </body>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+	integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+	crossorigin="anonymous"></script>
+  <!-- 카카오 맵 사용을 위한 js -->
+  <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=a7413221b6ddcfd107172321b8bf73f4"></script>
+  <script>
+    //전역변수
+    var map = null;
+    var marker = null;
+    var selectedDrivingNo = 0;
+    getDroneInfo();
+    getDroneDriving();
+    
+    //드론 상세정보 API
+    function getDroneInfo(){//함수 시작
+    	var uuid = $('#droneUUID').val();
+    	$.ajax({
+   		 url: '/api/v1/drone/'+uuid,
+       	 type : 'GET',
+       	 dataType : 'json',
+       	 success : function(response){
+       		 //드론 이름
+       		 $('#droneName').append(response.modelName);
+       		 //배터리 잔량
+       		 $('#battery').append(response.battery+'%');
+			 //통신상태 여부
+			 var msg = null;
+			 if(response.message){
+				 msg = '정상';
+			 }else{
+				 msg = '통신 오류';
+			 }
+			 $('#msg').append(msg);
+			 //드론 위치
+			 $('#loc').append(response.loc);
+			 //드론 등록날짜
+       		 $('#createAt').append(response.createAt);
+			 
+			 //lat : 위도, lng : 경도
+       		 initMap(response.latitude, response.longitude);
+       	 }
+    	});
+    }//함수 끝
+    
+    //드론 최신운행 기록 가져오기
+    function getDroneDriving(){ //함수 시작
+    	var uuid = $('#droneUUID').val();
+    	$.ajax({
+    		url: '/api/v1/drone/'+uuid+'/driving',
+          	type : 'GET',
+          	dataType : 'json',
+          	success : function(response){
+          		var html = "";
+          		if(response.length == 0){
+          			html += '<li class="logs-item"><p>운행 기록 없음</p></li>';
+          		}else{
+          			for(var i=0; i<response.length; i++){
+    					if(response[i].endAt == null){
+    						//운행 중
+    						html += '<li class="logs-item" onclick="getDrivingHistory('+response[i].drivingNo+')"><p>운행 중</p></li>';
+    					}else{
+    						//운행 종료
+    						html += '<li class="logs-item" onclick="getDrivingHistory('+response[i].drivingNo+')"><p>출발 시간 : 2022-10-28 14:44:33</p><p>도착 시간 : 2022-10-28 16:03:43</p></li>';
+    					}
+    				}
+          		}
+    			$('.logs-container').append(html);
+				
+          	}
+    	});
+    } //함수 끝
+    
+    function initMap(lat, lng) {
+      var mapContainer = document.getElementById('kakao-map'), // 지도를 표시할 div
+        mapOption = {
+          center: new kakao.maps.LatLng(lat, lng), // 지도의 중심좌표
+          level: 3, // 지도의 확대 레벨
+        };
+
+      map = new kakao.maps.Map(mapContainer, mapOption); // 지도를 생성합니다
+
+      var mapTypeControl = new kakao.maps.MapTypeControl(); //스카이뷰 추가
+      map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
+
+      var zoomControl = new kakao.maps.ZoomControl();
+      map.addControl(zoomControl, kakao.maps.ControlPosition.RIGHT);
+
+      // 마커가 표시될 위치입니다
+      var markerPosition = new kakao.maps.LatLng(lat, lng);
+
+      // 마커를 생성합니다
+      marker = new kakao.maps.Marker({
+        position: markerPosition,
+      });
+
+      // 마커가 지도 위에 표시되도록 설정합니다
+      marker.setMap(map);
+    }
+
+    //운행 상세 이력!
+    function getDrivingHistory(drivingNo) {
+    	
+      if (drivingNo == selectedDrivingNo) {
+   		alert('이미 선택한 운행정보입니다.');
+    	return false;
+      }
+      selectedDrivingNo = drivingNo;	
+    	
+      marker.setMap(null); // 지도에서 마커를 제거한다.
+      var centerLat = 36.357169;
+      var centerLng = 127.380828;
+      map.setLevel(8, { animate: true }, { anchor: new kakao.maps.LatLng(centerLat, centerLng) });
+      getPolyLine(drivingNo);
+    }
+    
+    function createMarker(startLat, startLng, endLat, endLng){
+    	var startSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png', // 출발 마커이미지의 주소입니다
+        startSize = new kakao.maps.Size(50, 45), // 출발 마커이미지의 크기입니다
+        startOption = {
+          offset: new kakao.maps.Point(15, 43), // 출발 마커이미지에서 마커의 좌표에 일치시킬 좌표를 설정합니다 (기본값은 이미지의 가운데 아래입니다)
+        };
+
+      // 출발 마커 이미지를 생성합니다
+      var startImage = new kakao.maps.MarkerImage(startSrc, startSize, startOption);
+
+      // 출발 마커가 표시될 위치입니다
+      var startPosition = new kakao.maps.LatLng(startLat, startLng);
+
+      // 출발 마커를 생성합니다
+      var startMarker = new kakao.maps.Marker({
+        map: map, // 출발 마커가 지도 위에 표시되도록 설정합니다
+        position: startPosition,
+        image: startImage, // 출발 마커이미지를 설정합니다
+      });
+
+      var arriveSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png', // 도착 마커이미지 주소입니다
+        arriveSize = new kakao.maps.Size(50, 45), // 도착 마커이미지의 크기입니다
+        arriveOption = {
+          offset: new kakao.maps.Point(15, 43), // 도착 마커이미지에서 마커의 좌표에 일치시킬 좌표를 설정합니다 (기본값은 이미지의 가운데 아래입니다)
+        };
+
+      // 도착 마커 이미지를 생성합니다
+      var arriveImage = new kakao.maps.MarkerImage(arriveSrc, arriveSize, arriveOption);
+
+      // 도착 마커가 표시될 위치입니다
+      var arrivePosition = new kakao.maps.LatLng(endLat, endLng);
+
+      // 도착 마커를 생성합니다
+      var arriveMarker = new kakao.maps.Marker({
+        map: map, // 도착 마커가 지도 위에 표시되도록 설정합니다
+        position: arrivePosition,
+        image: arriveImage, // 도착 마커이미지를 설정합니다
+      });
+    }
+
+    // 선 나타내는 함수
+    function getPolyLine(drivingNo) {
+      var history = [];
+      
+      $.ajax({
+    	url: '/api/v1/drone/'+drivingNo+'/history',
+        type : 'GET',
+       	dataType : 'json',
+        success : function(response){
+        	if(response.length == 0){
+        		alert('데이터가 없습니다.');
+        		return false;
+        	}
+        	createMarker(response[0].latitude, response[0].longitude, response[response.length-1].latitude, response[response.length-1].longitude);
+        	
+        	for(var i=0; i<response.length; i++){
+        		history[i] = new kakao.maps.LatLng(response[i].latitude, response[i].longitude);     		
+        	}
+        	
+        	var polyline = new kakao.maps.Polyline({
+                endArrow: true,
+                map: map,
+                path: history,
+                strokeWeight: 5,
+                strokeColor: '#db4040',
+                strokeOpacity: 1,
+                strokeStyle: 'solid',
+              });
+
+              //오버레이 구현하기
+              //오버레이란 지도에 html을 그리는 작업(직접 커스텀).
+              for (var i = 1; i < history.length - 1; i++) {
+                var circleOverlay = new kakao.maps.CustomOverlay({
+                  content: '<span class="dot"></span>',
+                  position: history[i],
+                  zIndex: 1,
+                });
+                circleOverlay.setMap(map); //지점 포인트 오버레이 생성!
+
+                var time = response[i].createAt;
+                var timeOverlay = new kakao.maps.CustomOverlay({
+                  content: '<div class="dotOverlay">Time : <span class="number">' + time + '</span></div>',
+                  position: history[i],
+                  zIndex: 3,
+                  yAnchor: 1,
+                });
+                timeOverlay.setMap(map);
+              }
+        	
+        }
+      });
+    }
+  </script>
+</html>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dw.drone.mapper.DroneMapper">
+	
+	<select id="selectAllDrone" resultType="DroneVO">
+		SELECT 
+			uuid,
+			model_name AS modelName,
+			battery,
+			latitude,
+			longitude
+		FROM drone
+	</select>
+	
+	<select id="selectOneDrone" resultType="DroneVO">
+		SELECT 
+			uuid,
+			battery,
+			model_name AS modelName,
+			is_message AS isMsg,
+			loc,
+			latitude,
+			longitude,
+			create_at AS createAt
+		FROM drone
+		WHERE uuid = #{uuid}
+	</select>
+	
+	<select id="selectDrivingByUuid" resultType="DrivingVO">
+		SELECT 
+			 dd.driving_no AS drivingNo,
+			 dd.start_at AS startAt,
+			 dd.end_at AS endAt
+		FROM drone AS d
+		INNER JOIN drone_driving AS dd
+		ON d.uuid  = dd.uuid 
+		WHERE d.uuid = #{uuid}
+	</select>
+	
+	<select id="selectHistoryByDrivingNo" resultType="HistoryVO">
+		SELECT 
+			ddh.history_no AS historyNo,
+			ddh.latitude,
+			ddh.longitude,
+			ddh.create_at AS createAt
+		FROM drone_driving AS dd
+		INNER JOIN drone_driving_history AS ddh 
+		ON dd.driving_no = ddh.driving_no 
+		WHERE dd.driving_no = #{drivingNo};
+	</select>
+		
+	
+</mapper>

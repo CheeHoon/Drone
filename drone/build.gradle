@@ -1,0 +1,39 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.7.5'
+	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+}
+
+group = 'com.dw'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.2'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'mysql:mysql-connector-java'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'	
+	//excel
+	implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '5.2.2'
+	//page (페이징 처리를 도와주는 라이브러리)
+	implementation group: 'com.github.pagehelper', name: 'pagehelper-spring-boot-starter', version: '1.4.2'
+	//리캡챠 v2
+	implementation 'javax.json:javax.json-api:1.1.2'
+	implementation 'org.glassfish:javax.json:1.1'
+	
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	//Spring security
+	implementation "org.springframework.security:spring-security-web"
+	implementation "org.springframework.security:spring-security-config"
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

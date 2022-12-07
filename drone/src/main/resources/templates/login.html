@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="title" content="IoT 관제 시스템" />
+<meta property="article:author" content="여러분들 이름작성하기!" />
+<meta property="og:type" content="website" />
+<link rel="shortcut icon" href="images/favicon.ico" />
+<title>IoT 관제 시스템</title>
+</head>
+<body>
+	<form enctype="utf8" id="loginForm" >
+      <div id="recaptcha" class="g-recaptcha" data-callback="recaptchaCallback" data-sitekey="6LcHNCEjAAAAAI4BCp7kxrGNUBJdBc6EHfHhzXVf"></div>
+      <br/>
+      <input type="button" value="인증하기" onclick="doLogin()">
+    </form>
+</body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+	integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+	crossorigin="anonymous"></script>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script>
+	var isRecaptchachecked = false;
+	
+	function recaptchaCallback(){
+		 isRecaptchachecked = true;
+	}
+	
+	function doLogin(){
+		
+		if(!isRecaptchachecked){
+			alert('리캡차 인증 체크를 해주세요.');
+			$("#recaptcha").focus();
+			return false;
+		}
+		var formData = $("#loginForm").serialize();
+		$.ajax({
+			url:'/valid-recaptcha',
+			type: 'POST',
+    		contentType: "application/x-www-form-urlencoded",
+    		data: formData,
+    		dataType: 'json',
+    		success: function(response){
+    			if(response){
+    				location.href = '/home';
+    			}else{
+    				alert('인증 실패');
+    			}
+    		}
+		});
+		
+	}
+
+	
+	
+	
+</script>
+</html>

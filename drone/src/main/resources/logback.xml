@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<!--appender 는 로그를 제공할 방법 (파일,메일,콘솔)  -->
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+       	<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>DEBUG</level>
+		</filter>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>[%d{yyyy-MM-dd HH:mm:ss}] %-5level %logger{36} - %msg%n</Pattern>
+        </layout>
+    </appender>
+    
+    <root level="INFO">
+		<appender-ref ref="STDOUT" />	
+	</root>
+    
+    <logger name="com.dw.drone.mapper" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+    
+</configuration>
